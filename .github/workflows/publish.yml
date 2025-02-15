@@ -32,14 +32,17 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           known_hosts: github.com
 
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
       - name: Increment version
         run: |
           npm version patch
 
       - name: Commit and push version bump
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add package.json
           git commit -m 'ci: bump version'
           git push
