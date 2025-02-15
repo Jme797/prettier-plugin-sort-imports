@@ -1,6 +1,6 @@
 {
   "name": "prettier-plugin-remove-unused-imports",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Prettier plugin to remove unused imports from your code.",
   "main": "dist/index.js",
   "scripts": {
