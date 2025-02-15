@@ -1,56 +1,50 @@
-import { parsers as babelParsers } from 'prettier/plugins/babel';
-import { parsers as typescriptParsers } from 'prettier/plugins/typescript';
+import {parsers as babelParsers} from 'prettier/plugins/babel';
+import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
 
 import parser from '@babel/parser';
-import traverse, { NodePath } from '@babel/traverse';
-import generate from '@babel/generator';
+import _traverse, {NodePath} from '@babel/traverse';
+import _generate from '@babel/generator';
 import * as t from '@babel/types';
 
-const sortImports = (code: string): string => {
+// @ts-expect-error
+const generate = _generate.default;
+// @ts-expect-error
+const traverse = _traverse.default;
+
+function removeUnusedImports(code: string): string {
     const ast = parser.parse(code, {
         sourceType: 'module',
         plugins: ['jsx', 'typescript'],
     });
 
-    const importDeclarations: t.ImportDeclaration[] = [];
+    const usedIdentifiers = new Set<string>();
+
+    traverse(ast, {
+        Identifier(path: NodePath) {
+            if (path.isReferencedIdentifier()) {
+                usedIdentifiers.add(path.node.name);
+            }
+        },
+    });
 
     traverse(ast, {
         ImportDeclaration(path: NodePath<t.ImportDeclaration>) {
-            importDeclarations.push(path.node);
+            path.node.specifiers = path.node.specifiers.filter(specifier => usedIdentifiers.has(specifier.local.name));
+
+            if (path.node.specifiers.length === 0) {
+                path.remove();
+            }
         },
     });
 
-    // Sort import declarations by source value
-    importDeclarations.sort((a, b) => {
-        if (a.source.value < b.source.value) return -1;
-        if (a.source.value > b.source.value) return 1;
-        return 0;
-    });
-
-    // Sort specifiers within each import declaration by local name
-    importDeclarations.forEach(declaration => {
-        declaration.specifiers.sort((a, b) => {
-            if (a.local.name < b.local.name) return -1;
-            if (a.local.name > b.local.name) return 1;
-            return 0;
-        });
-    });
-
-    const newAst = {
-        ...ast,
-        program: {
-            ...ast.program,
-            body: [...importDeclarations, ...ast.program.body.filter(node => node.type !== 'ImportDeclaration')],
-        },
-    };
-
-    const { code: transformedCode } = generate(newAst, { retainLines: true });
+    const {code: transformedCode} = generate(ast, {retainLines: true});
 
     return transformedCode;
-};
+}
 
 const preprocess = (code: string): string => {
-    return sortImports(code);
+    const transformedCode = removeUnusedImports(code);
+    return transformedCode;
 };
 
 export default {

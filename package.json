@@ -5,8 +5,10 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "jest",
-    "build": "node build.js"
+    "build": "node build.js",
+    "format": "prettier --write src/test.js"
   },
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/Jme797/prettier-plugin-remove-unused-imports.git"
