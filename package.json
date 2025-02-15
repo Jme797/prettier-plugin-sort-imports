@@ -1,0 +1,33 @@
+{
+  "name": "prettier-plugin-remove-unused-imports",
+  "version": "1.0.0",
+  "description": "A Prettier plugin to remove unused imports from your code.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jme797/prettier-plugin-remove-unused-imports.git"
+  },
+  "keywords": [
+    "prettier",
+    "plugin",
+    "remove",
+    "unused",
+    "imports"
+  ],
+  "author": "Jme797",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Jme797/prettier-plugin-remove-unused-imports/issues"
+  },
+  "homepage": "https://github.com/Jme797/prettier-plugin-remove-unused-imports#readme",
+  "dependencies": {
+    "prettier": "^2.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "packageManager": "yarn@4.5.1"
+}
