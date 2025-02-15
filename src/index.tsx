@@ -1,12 +1,10 @@
-import {parsers as babelParsers} from 'prettier/plugins/babel';
-import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
+import { parsers as babelParsers } from 'prettier/plugins/babel';
+import { parsers as typescriptParsers } from 'prettier/plugins/typescript';
 
 import parser from '@babel/parser';
-import _traverse from '@babel/traverse';
-import _generate from '@babel/generator';
-
-const traverse = _traverse.default;
-const generate = _generate.default;
+import traverse, { NodePath } from '@babel/traverse';
+import generate from '@babel/generator';
+import * as t from '@babel/types';
 
 const sortImports = (code: string): string => {
     const ast = parser.parse(code, {
@@ -14,10 +12,10 @@ const sortImports = (code: string): string => {
         plugins: ['jsx', 'typescript'],
     });
 
-    const importDeclarations: any[] = [];
+    const importDeclarations: t.ImportDeclaration[] = [];
 
     traverse(ast, {
-        ImportDeclaration(path: any) {
+        ImportDeclaration(path: NodePath<t.ImportDeclaration>) {
             importDeclarations.push(path.node);
         },
     });
@@ -31,7 +29,7 @@ const sortImports = (code: string): string => {
 
     // Sort specifiers within each import declaration by local name
     importDeclarations.forEach(declaration => {
-        declaration.specifiers.sort((a: any, b: any) => {
+        declaration.specifiers.sort((a, b) => {
             if (a.local.name < b.local.name) return -1;
             if (a.local.name > b.local.name) return 1;
             return 0;
@@ -46,7 +44,7 @@ const sortImports = (code: string): string => {
         },
     };
 
-    const {code: transformedCode} = generate(newAst, {retainLines: true});
+    const { code: transformedCode } = generate(newAst, { retainLines: true });
 
     return transformedCode;
 };

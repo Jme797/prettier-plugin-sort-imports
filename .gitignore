@@ -13,3 +13,11 @@
 .pnp.*
 
 node_modules
+dist
+*.log
+*.tsbuildinfo
+.DS_Store
+.env
+.idea
+.vscode
+coverage
