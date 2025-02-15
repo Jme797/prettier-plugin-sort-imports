@@ -1,4 +1,4 @@
-import removeUnusedImports from './src/out.js';
+import removeUnusedImports from './dist/index.js';
 
 export default {
     plugins: [removeUnusedImports],

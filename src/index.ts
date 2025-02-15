@@ -1,14 +1,12 @@
-import {parsers as babelParsers} from 'prettier/plugins/babel';
-import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
+const {parsers: babelParsers} = require('prettier/plugins/babel');
+const {parsers: typescriptParsers} = require('prettier/plugins/typescript');
 
-import parser from '@babel/parser';
-import _traverse, {NodePath} from '@babel/traverse';
-import _generate from '@babel/generator';
-import * as t from '@babel/types';
+const parser = require('@babel/parser');
+const _traverse = require('@babel/traverse');
+const _generate = require('@babel/generator');
+const t = require('@babel/types');
 
-// @ts-expect-error
 const generate = _generate.default;
-// @ts-expect-error
 const traverse = _traverse.default;
 
 function removeUnusedImports(code: string): string {
@@ -20,7 +18,7 @@ function removeUnusedImports(code: string): string {
     const usedIdentifiers = new Set<string>();
 
     traverse(ast, {
-        Identifier(path: NodePath) {
+        Identifier(path: any) {
             if (path.isReferencedIdentifier()) {
                 usedIdentifiers.add(path.node.name);
             }
@@ -28,8 +26,10 @@ function removeUnusedImports(code: string): string {
     });
 
     traverse(ast, {
-        ImportDeclaration(path: NodePath<t.ImportDeclaration>) {
-            path.node.specifiers = path.node.specifiers.filter(specifier => usedIdentifiers.has(specifier.local.name));
+        ImportDeclaration(path: any) {
+            path.node.specifiers = path.node.specifiers.filter((specifier: any) =>
+                usedIdentifiers.has(specifier.local.name)
+            );
 
             if (path.node.specifiers.length === 0) {
                 path.remove();
@@ -47,7 +47,7 @@ const preprocess = (code: string): string => {
     return transformedCode;
 };
 
-export default {
+module.exports = {
     parsers: {
         babel: {
             ...babelParsers.babel,
