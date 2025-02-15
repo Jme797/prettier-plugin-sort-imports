@@ -4,7 +4,8 @@
   "description": "A Prettier plugin to remove unused imports from your code.",
   "main": "dist/index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "node build.js"
   },
   "repository": {
     "type": "git",
