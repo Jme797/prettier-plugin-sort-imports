@@ -1,4 +1,4 @@
-# prettier-plugin-remove-unused-imports
+# prettier-remove-unused-imports
 
 A Prettier plugin to remove unused imports from your code.
 
@@ -7,7 +7,7 @@ A Prettier plugin to remove unused imports from your code.
 You can install the plugin using Yarn:
 
 ```sh
-yarn add --dev prettier-plugin-remove-unused-imports
+yarn add --dev prettier-remove-unused-imports
 ```
 
 ## Setup
@@ -15,7 +15,7 @@ yarn add --dev prettier-plugin-remove-unused-imports
 Add the plugin to your Prettier configuration:
 
 ```javascript
-const unusedImportPlugin = require('prettier-plugin-remove-unused-imports');
+const unusedImportPlugin = require('prettier-remove-unused-imports');
 
 module.exports = {
     plugins: [unusedImportPlugin],
