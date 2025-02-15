@@ -39,12 +39,10 @@ jobs:
 
       - name: Increment version
         run: |
-          npm version patch
+          npm version patch -m "ci: bump version to %s"
 
-      - name: Commit and push version bump
+      - name: Push version bump
         run: |
-          git add package.json
-          git diff-index --quiet HEAD || git commit -m 'ci: bump version'
           git push
 
       - name: Publish to npm
