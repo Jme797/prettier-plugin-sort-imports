@@ -1,7 +1,7 @@
 const esbuild = require('esbuild');
 
 esbuild.build({
-    entryPoints: ['src/alt.ts'],
+    entryPoints: ['src/index.ts'],
     bundle: true,
     outfile: 'dist/index.js',
     platform: 'node',
