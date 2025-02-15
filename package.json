@@ -1,30 +1,29 @@
 {
-  "name": "prettier-remove-unused-imports",
+  "name": "prettier-plugin-sort-imports",
   "version": "1.1.2",
-  "description": "A Prettier plugin to remove unused imports from your code.",
+  "description": "A Prettier plugin to sort imports in your code.",
   "main": "dist/index.js",
   "scripts": {
     "test": "jest",
     "build": "node build.js",
-    "format": "prettier --write src/test.js"
+    "format": "prettier --write src/test.tsx"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Jme797/prettier-plugin-remove-unused-imports"
+    "url": "https://github.com/Jme797/prettier-plugin-sort-imports"
   },
   "keywords": [
     "prettier",
     "plugin",
-    "remove",
-    "unused",
+    "sort",
     "imports"
   ],
   "author": "Jme797",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Jme797/prettier-plugin-remove-unused-imports/issues"
+    "url": "https://github.com/Jme797/prettier-plugin-sort-imports/issues"
   },
-  "homepage": "https://github.com/Jme797/prettier-plugin-remove-unused-imports#readme",
+  "homepage": "https://github.com/Jme797/prettier-plugin-sort-imports#readme",
   "dependencies": {
     "@babel/generator": "^7.26.9",
     "@babel/parser": "^7.26.9",

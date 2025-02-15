@@ -1,7 +1,7 @@
-import removeUnusedImports from './dist/index.js';
+import sortImports from './dist/index.js';
 
 export default {
-    plugins: [removeUnusedImports],
+    plugins: [sortImports],
     printWidth: 120,
     trailingComma: 'es5',
     tabWidth: 4,

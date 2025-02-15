@@ -3029,9 +3029,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier-remove-unused-imports@workspace:.":
+"prettier-plugin-sort-imports@workspace:.":
   version: 0.0.0-use.local
-  resolution: "prettier-remove-unused-imports@workspace:."
+  resolution: "prettier-plugin-sort-imports@workspace:."
   dependencies:
     "@babel/generator": "npm:^7.26.9"
     "@babel/parser": "npm:^7.26.9"
