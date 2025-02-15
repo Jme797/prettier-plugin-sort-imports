@@ -23,6 +23,11 @@ function removeUnusedImports(code: string): string {
                 usedIdentifiers.add(path.node.name);
             }
         },
+        JSXIdentifier(path: any) {
+            if (path.isReferencedIdentifier()) {
+                usedIdentifiers.add(path.node.name);
+            }
+        },
     });
 
     traverse(ast, {
