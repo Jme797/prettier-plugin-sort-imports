@@ -10,6 +10,7 @@ const generate = _generate.default;
 
 const {expressionStatement, stringLiteral} = t;
 
+const NEW_LINE_CHARACTERS = '\n\n';
 const NEW_LINE_PLACE_HOLDER_NODE = 'NEW_LINE_PLACE_HOLDER_NODE';
 const NEW_LINE = expressionStatement(stringLiteral(NEW_LINE_PLACE_HOLDER_NODE));
 
@@ -100,7 +101,7 @@ export function sortImports(code: string, config: SortImportsConfig): string {
 
     const {code: transformedCode} = generate(newAst, {retainLines: true});
 
-    return transformedCode.replace(new RegExp(`"${NEW_LINE_PLACE_HOLDER_NODE}";`, 'gi'), '\n').trim();
+    return transformedCode.replace(new RegExp(`"${NEW_LINE_PLACE_HOLDER_NODE}";`, 'gi'), NEW_LINE_CHARACTERS).trim();
 }
 
 const preprocess = (code: string, options: any): string => {
