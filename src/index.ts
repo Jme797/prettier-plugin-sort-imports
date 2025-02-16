@@ -76,12 +76,20 @@ export function sortImports(code: string, config: SortImportsConfig): string {
                         return 0;
                     });
                 });
+                console.log(importGroups[order]);
                 sortedImports.push(...importGroups[order]);
                 sortedImports.push(NEW_LINE);
             }
         });
     }
     if (!config.importOrder.includes(UNKNOWN) && importGroups[UNKNOWN].length > 0) {
+        importGroups[UNKNOWN].forEach(declaration => {
+            declaration.specifiers.sort((a, b) => {
+                if (a.local.name < b.local.name) return -1;
+                if (a.local.name > b.local.name) return 1;
+                return 0;
+            });
+        });
         sortedImports.push(...importGroups[UNKNOWN]);
         sortedImports.push(NEW_LINE);
     }
