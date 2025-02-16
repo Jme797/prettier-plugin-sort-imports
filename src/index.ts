@@ -76,7 +76,6 @@ export function sortImports(code: string, config: SortImportsConfig): string {
                         return 0;
                     });
                 });
-                console.log(importGroups[order]);
                 sortedImports.push(...importGroups[order]);
                 sortedImports.push(NEW_LINE);
             }
