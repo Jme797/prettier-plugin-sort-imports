@@ -19,5 +19,18 @@ const unusedImportPlugin = require('prettier-remove-unused-imports');
 
 module.exports = {
     plugins: [unusedImportPlugin],
+    importOrder: [
+        '<UNKNOWN>',
+        '^@example/(.*)$',
+        '^@another-example/(.*)$',
+        '^example-contexts',
+        '^example-components',
+        '^example-utils',
+        '^example-styles',
+        '^(.*).svg',
+        '^(.*).scss',
+        '^../',
+        '^./',
+    ],
 };
 ```

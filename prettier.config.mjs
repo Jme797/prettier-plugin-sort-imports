@@ -2,6 +2,7 @@ import sortImports from './dist/index.js';
 
 export default {
     plugins: [sortImports],
+    importOrder: [],
     printWidth: 120,
     trailingComma: 'es5',
     tabWidth: 4,
