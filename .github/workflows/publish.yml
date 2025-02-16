@@ -43,7 +43,7 @@ jobs:
 
       - name: Push version bump
         run: |
-          git remote set-url origin git@github.com:Jme797/prettier-plugin-remove-unused-imports.git
+          git remote set-url origin git@github.com:Jme797/prettier-plugin-sort-imports.git
           git push origin HEAD:main
 
       - name: Publish to npm
