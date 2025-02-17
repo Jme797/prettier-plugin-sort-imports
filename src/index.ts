@@ -109,11 +109,15 @@ export function sortImports(
     }
 
     // Reattach comments to the sorted import declarations
-    sortedImports.forEach((node, index) => {
+    [...sortedImports.filter(node => node.type === 'ExpressionStatement')].forEach((node, index) => {
         if (t.isImportDeclaration(node)) {
             const originalNode = importDeclarations[index];
-            addComments(node, 'leading', originalNode.leadingComments || []);
-            addComments(node, 'trailing', originalNode.trailingComments || []);
+            if (originalNode.leadingComments) {
+                addComments(node, 'leading', originalNode.leadingComments);
+            }
+            if (originalNode.trailingComments) {
+                addComments(node, 'trailing', originalNode.trailingComments);
+            }
         }
     });
 
