@@ -8,11 +8,7 @@ import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
 const traverse = _traverse.default;
 const generate = _generate.default;
 
-const {expressionStatement, stringLiteral, addComments} = t;
-
 const NEW_LINE_CHARACTERS = '\n\n';
-const NEW_LINE_PLACE_HOLDER_NODE = 'NEW_LINE_PLACE_HOLDER_NODE';
-const NEW_LINE = expressionStatement(stringLiteral(NEW_LINE_PLACE_HOLDER_NODE));
 
 const UNKNOWN = '<UNKNOWN>';
 
@@ -31,7 +27,7 @@ export function sortImports(
     });
 
     const importDeclarations: t.ImportDeclaration[] = [];
-    const leadingComments: t.Comment[] = [];
+    const leadingCommentsMap: Map<t.Node, t.Comment[]> = new Map();
 
     traverse(ast, {
         ImportDeclaration(path: any) {
@@ -39,9 +35,14 @@ export function sortImports(
         },
         Program(path: any) {
             if (path.node.body.length > 0 && path.node.body[0].leadingComments) {
-                leadingComments.push(...path.node.body[0].leadingComments);
+                leadingCommentsMap.set(path.node.body[0], path.node.body[0].leadingComments);
             }
         },
+    });
+
+    // Remove trailing comments from every node
+    importDeclarations.forEach(declaration => {
+        declaration.trailingComments = null;
     });
 
     // Initialize the import groups object
@@ -74,73 +75,23 @@ export function sortImports(
         importGroups[groupKey].push(declaration);
     });
 
-    // Join the import groups back together, maintaining the order specified in the config
-    const sortedImports: (t.ImportDeclaration | t.ExpressionStatement)[] = [];
-    if (importOrderConfig) {
-        importOrderConfig.forEach(order => {
-            if (importGroups[order].length > 0) {
-                importGroups[order].forEach(declaration => {
-                    declaration.specifiers.sort((a, b) => {
-                        if (a.local.name < b.local.name) return -1;
-                        if (a.local.name > b.local.name) return 1;
-                        return 0;
-                    });
-                });
-                sortedImports.push(...importGroups[order]);
-                sortedImports.push(NEW_LINE);
-            }
-        });
-    }
-    if (!importOrderConfig.includes(UNKNOWN) && importGroups[UNKNOWN].length > 0) {
-        importGroups[UNKNOWN].forEach(declaration => {
-            declaration.specifiers.sort((a, b) => {
-                if (a.local.name < b.local.name) return -1;
-                if (a.local.name > b.local.name) return 1;
-                return 0;
-            });
-        });
-        sortedImports.push(...importGroups[UNKNOWN]);
-        sortedImports.push(NEW_LINE);
-    }
-
-    // Remove the last blank line if it exists
-    if (sortedImports.length > 0 && t.isEmptyStatement(sortedImports[sortedImports.length - 1])) {
-        sortedImports.pop();
-    }
-
-    // Reattach comments to the sorted import declarations
-    [...sortedImports.filter(node => node.type === 'ExpressionStatement')].forEach((node, index) => {
-        if (t.isImportDeclaration(node)) {
-            const originalNode = importDeclarations[index];
-            if (originalNode.leadingComments) {
-                addComments(node, 'leading', originalNode.leadingComments);
-            }
-            if (originalNode.trailingComments) {
-                addComments(node, 'trailing', originalNode.trailingComments);
-            }
+    // Generate code for each group separately and join them with new lines
+    const groupCodes: string[] = [];
+    Object.keys(importGroups).forEach(groupKey => {
+        if (importGroups[groupKey].length > 0) {
+            const groupAst = {
+                ...ast,
+                program: {
+                    ...ast.program,
+                    body: [...importGroups[groupKey]],
+                },
+            };
+            const {code: groupCode} = generate(groupAst, {retainLines: false, comments: true});
+            groupCodes.push(groupCode.trim());
         }
     });
 
-    // Reattach leading comments to the first import declaration
-    if (leadingComments.length > 0 && sortedImports.length > 0 && t.isImportDeclaration(sortedImports[0])) {
-        addComments(sortedImports[0], 'leading', leadingComments);
-    }
-
-    const newAst = {
-        ...ast,
-        program: {
-            ...ast.program,
-            body: [...sortedImports],
-        },
-    };
-
-    const {code: transformedImports} = generate(newAst, {retainLines: false, comments: true});
-
-    const importsCode = transformedImports
-        .replace(new RegExp(`"${NEW_LINE_PLACE_HOLDER_NODE}";`, 'gi'), NEW_LINE_CHARACTERS)
-        .trim();
-
-    return importsCode;
+    return groupCodes.join(NEW_LINE_CHARACTERS);;
 }
 
 const preprocess = (code: string, options: any): string => {
