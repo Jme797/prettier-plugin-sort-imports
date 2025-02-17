@@ -162,14 +162,18 @@ const preprocess = (code: string, options: any): string => {
         }
     }
 
+    if (!hasImports) {
+        return code;
+    }
+
     // Transform the code to sort imports
-    const transformedImports = hasImports ? sortImports(code, options) : '';
+    const transformedImports = sortImports(code, options);
 
     // Extract the rest of the original code
     const nonImportCode = originalLines.slice(importEndLine).join('\n');
 
     // Combine processed imports with the rest of the original code
-    const finalCode = hasImports ? `${transformedImports}${NEW_LINE_CHARACTERS}${nonImportCode}` : code;
+    const finalCode = `${transformedImports}${NEW_LINE_CHARACTERS}${nonImportCode}`;
 
     return finalCode;
 };
