@@ -75,6 +75,15 @@ export function sortImports(
         importGroups[groupKey].push(declaration);
     });
 
+    // Sort each group alphabetically by path.node.source.value
+    Object.keys(importGroups).forEach(groupKey => {
+        importGroups[groupKey].sort((a, b) => {
+            if (a.source.value < b.source.value) return -1;
+            if (a.source.value > b.source.value) return 1;
+            return 0;
+        });
+    });
+
     // Generate code for each group separately and join them with new lines
     const groupCodes: string[] = [];
     Object.keys(importGroups).forEach(groupKey => {
@@ -91,7 +100,9 @@ export function sortImports(
         }
     });
 
-    return groupCodes.join(NEW_LINE_CHARACTERS);;
+    const finalTransformedImports = groupCodes.join(NEW_LINE_CHARACTERS);
+
+    return finalTransformedImports;
 }
 
 const preprocess = (code: string, options: any): string => {
