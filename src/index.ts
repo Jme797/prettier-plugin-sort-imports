@@ -88,6 +88,7 @@ export function sortImports(
     Object.keys(importGroups).forEach(groupKey => {
         importGroups[groupKey].forEach(declaration => {
             const defaultSpecifier = declaration.specifiers.find(specifier => t.isImportDefaultSpecifier(specifier));
+            const namespaceSpecifier = declaration.specifiers.find(specifier => t.isImportNamespaceSpecifier(specifier));
             const namedSpecifiers = declaration.specifiers.filter(specifier => t.isImportSpecifier(specifier));
 
             namedSpecifiers.sort((a, b) => {
@@ -96,7 +97,11 @@ export function sortImports(
                 return 0;
             });
 
-            declaration.specifiers = defaultSpecifier ? [defaultSpecifier, ...namedSpecifiers] : namedSpecifiers;
+            declaration.specifiers = [
+                ...(defaultSpecifier ? [defaultSpecifier] : []),
+                ...(namespaceSpecifier ? [namespaceSpecifier] : []),
+                ...namedSpecifiers,
+            ];
         });
     });
 
