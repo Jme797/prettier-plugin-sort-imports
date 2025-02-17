@@ -2,13 +2,13 @@ import * as _generate from '@babel/generator';
 import * as parser from '@babel/parser';
 import * as _traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import { parsers as babelParsers } from 'prettier/plugins/babel';
-import { parsers as typescriptParsers } from 'prettier/plugins/typescript';
+import {parsers as babelParsers} from 'prettier/plugins/babel';
+import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
 
 const traverse = _traverse.default;
 const generate = _generate.default;
 
-const { expressionStatement, stringLiteral } = t;
+const {expressionStatement, stringLiteral, addComments} = t;
 
 const NEW_LINE_CHARACTERS = '\n\n';
 const NEW_LINE_PLACE_HOLDER_NODE = 'NEW_LINE_PLACE_HOLDER_NODE';
@@ -22,23 +22,30 @@ interface SortImportsConfig {
 
 export function sortImports(
     code: string,
-    { importOrder: importOrderConfig = [UNKNOWN, '^../', '^./'] }: SortImportsConfig
+    {importOrder: importOrderConfig = [UNKNOWN, '^../', '^./']}: SortImportsConfig
 ): string {
     const ast = parser.parse(code, {
         sourceType: 'module',
         plugins: ['jsx', 'typescript'],
+        attachComment: true,
     });
 
     const importDeclarations: t.ImportDeclaration[] = [];
+    const leadingComments: t.Comment[] = [];
 
     traverse(ast, {
         ImportDeclaration(path: any) {
             importDeclarations.push(path.node);
         },
+        Program(path: any) {
+            if (path.node.body.length > 0 && path.node.body[0].leadingComments) {
+                leadingComments.push(...path.node.body[0].leadingComments);
+            }
+        },
     });
 
     // Initialize the import groups object
-    const importGroups: { [key: string]: t.ImportDeclaration[] } = {};
+    const importGroups: {[key: string]: t.ImportDeclaration[]} = {};
     if (importOrderConfig) {
         importOrderConfig.forEach(order => {
             importGroups[order] = [];
@@ -101,6 +108,20 @@ export function sortImports(
         sortedImports.pop();
     }
 
+    // Reattach comments to the sorted import declarations
+    sortedImports.forEach((node, index) => {
+        if (t.isImportDeclaration(node)) {
+            const originalNode = importDeclarations[index];
+            addComments(node, 'leading', originalNode.leadingComments || []);
+            addComments(node, 'trailing', originalNode.trailingComments || []);
+        }
+    });
+
+    // Reattach leading comments to the first import declaration
+    if (leadingComments.length > 0 && sortedImports.length > 0 && t.isImportDeclaration(sortedImports[0])) {
+        addComments(sortedImports[0], 'leading', leadingComments);
+    }
+
     const newAst = {
         ...ast,
         program: {
@@ -109,15 +130,7 @@ export function sortImports(
         },
     };
 
-    const restAst = {
-        ...ast,
-        program: {
-            ...ast.program,
-            body: [...ast.program.body.filter(node => node.type !== 'ImportDeclaration')],
-        },
-    };
-
-    const { code: transformedImports } = generate(newAst, { retainLines: false });
+    const {code: transformedImports} = generate(newAst, {retainLines: false, comments: true});
 
     const importsCode = transformedImports
         .replace(new RegExp(`"${NEW_LINE_PLACE_HOLDER_NODE}";`, 'gi'), NEW_LINE_CHARACTERS)
@@ -131,8 +144,12 @@ const preprocess = (code: string, options: any): string => {
     const originalLines = code.split('\n');
     let importEndLine = 0;
     let insideImport = false;
+    let hasImports = false;
     for (let i = 0; i < originalLines.length; i++) {
         const line = originalLines[i].trim();
+        if (line.startsWith('import')) {
+            hasImports = true;
+        }
         if (line.startsWith('import') || line.startsWith('//') || line.startsWith('/*') || insideImport) {
             if (line.endsWith(';') || line.endsWith('*/')) {
                 insideImport = false;
@@ -146,13 +163,13 @@ const preprocess = (code: string, options: any): string => {
     }
 
     // Transform the code to sort imports
-    const transformedImports = sortImports(code, options);
+    const transformedImports = hasImports ? sortImports(code, options) : '';
 
     // Extract the rest of the original code
     const nonImportCode = originalLines.slice(importEndLine).join('\n');
 
     // Combine processed imports with the rest of the original code
-    const finalCode = `${transformedImports}${NEW_LINE_CHARACTERS}${nonImportCode}`;
+    const finalCode = hasImports ? `${transformedImports}${NEW_LINE_CHARACTERS}${nonImportCode}` : code;
 
     return finalCode;
 };
