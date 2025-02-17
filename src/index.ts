@@ -2,7 +2,7 @@ import * as _generate from '@babel/generator';
 import * as parser from '@babel/parser';
 import * as _traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import {AST} from 'prettier';
+import {AST, SupportOptions} from 'prettier';
 import {parsers as babelParsers} from 'prettier/plugins/babel';
 import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
 
@@ -166,11 +166,11 @@ const preprocess = (code: string, options: any): string => {
     return finalCode;
 };
 
-export const options = {
+export const options: SupportOptions = {
     importOrder: {
         type: 'path',
         array: true,
-        default: [UNKNOWN, '^../', '^./'],
+        default: [{value: [UNKNOWN, '^../', '^./']}],
         category: 'Global',
         description: 'Configuration for sorting imports.',
     },
