@@ -117,34 +117,23 @@ export function sortImports(
 }
 
 const preprocess = (code: string, options: any): string => {
-    // Find the line where the import statements end in the original code
+    const ast = parser.parse(code, {
+        sourceType: 'module',
+        plugins: ['jsx', 'typescript'],
+        attachComment: true,
+    });
+
+    let lastImportEnd = 0;
+    traverse(ast, {
+        ImportDeclaration(path: any) {
+            lastImportEnd = path.node.loc.end.line;
+        },
+    });
+
     const originalLines = code.split('\n');
-    let importEndLine = 0;
-    let lastImportLine = -1;
-    let insideImport = false;
-    let hasImports = false;
+    const importEndLine = lastImportEnd;
 
-    for (let i = 0; i < originalLines.length; i++) {
-        const line = originalLines[i].trim();
-        if (line.startsWith('import')) {
-            hasImports = true;
-        }
-        if (line.startsWith('import') || line.startsWith('//') || line.startsWith('/*') || insideImport) {
-            if (line.endsWith(';')) {
-                lastImportLine = i;
-            }
-            if (line.endsWith(';') || line.endsWith('*/')) {
-                insideImport = false;
-            } else if (line.startsWith('import') || line.startsWith('/*')) {
-                insideImport = true;
-            }
-        } else if (line !== '') {
-            importEndLine = lastImportLine + 1;
-            break;
-        }
-    }
-
-    if (!hasImports) {
+    if (importEndLine === 0) {
         return code;
     }
 
@@ -152,7 +141,7 @@ const preprocess = (code: string, options: any): string => {
     const transformedImports = sortImports(code, options);
 
     // Extract the rest of the original code
-    const nonImportCode = originalLines.slice(lastImportLine + 1).join('\n');
+    const nonImportCode = originalLines.slice(importEndLine).join('\n');
 
     // Combine processed imports with the rest of the original code
     const finalCode = `${transformedImports}${NEW_LINE_CHARACTERS}${nonImportCode}`;
