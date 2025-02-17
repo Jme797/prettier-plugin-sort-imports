@@ -119,9 +119,11 @@ const preprocess = (code: string, options: any): string => {
             hasImports = true;
         }
         if (line.startsWith('import') || line.startsWith('//') || line.startsWith('/*') || insideImport) {
+            if (line.endsWith(';')) {
+                lastImportLine = i;
+            }
             if (line.endsWith(';') || line.endsWith('*/')) {
                 insideImport = false;
-                lastImportLine = i;
             } else if (line.startsWith('import') || line.startsWith('/*')) {
                 insideImport = true;
             }
