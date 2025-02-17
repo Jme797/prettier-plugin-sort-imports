@@ -2,8 +2,8 @@ import * as _generate from '@babel/generator';
 import * as parser from '@babel/parser';
 import * as _traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import { parsers as babelParsers } from 'prettier/plugins/babel';
-import { parsers as typescriptParsers } from 'prettier/plugins/typescript';
+import {parsers as babelParsers} from 'prettier/plugins/babel';
+import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
 
 const traverse = _traverse.default;
 const generate = _generate.default;
@@ -18,7 +18,7 @@ interface SortImportsConfig {
 
 export function sortImports(
     code: string,
-    { importOrder: importOrderConfig = [UNKNOWN, '^../', '^./'] }: SortImportsConfig
+    {importOrder: importOrderConfig = [UNKNOWN, '^../', '^./']}: SortImportsConfig
 ): string {
     const ast = parser.parse(code, {
         sourceType: 'module',
@@ -46,7 +46,7 @@ export function sortImports(
     });
 
     // Initialize the import groups object
-    const importGroups: { [key: string]: t.ImportDeclaration[] } = {};
+    const importGroups: {[key: string]: t.ImportDeclaration[]} = {};
     if (importOrderConfig) {
         importOrderConfig.forEach(order => {
             importGroups[order] = [];
@@ -84,6 +84,17 @@ export function sortImports(
         });
     });
 
+    // Sort specifiers within each import declaration
+    Object.keys(importGroups).forEach(groupKey => {
+        importGroups[groupKey].forEach(declaration => {
+            declaration.specifiers.sort((a, b) => {
+                if (a.local.name < b.local.name) return -1;
+                if (a.local.name > b.local.name) return 1;
+                return 0;
+            });
+        });
+    });
+
     // Generate code for each group separately and join them with new lines
     const groupCodes: string[] = [];
     Object.keys(importGroups).forEach(groupKey => {
@@ -95,7 +106,7 @@ export function sortImports(
                     body: [...importGroups[groupKey]],
                 },
             };
-            const { code: groupCode } = generate(groupAst, { retainLines: false, comments: true });
+            const {code: groupCode} = generate(groupAst, {retainLines: false, comments: true});
             groupCodes.push(groupCode.trim());
         }
     });
