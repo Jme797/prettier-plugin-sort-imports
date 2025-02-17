@@ -20,7 +20,10 @@ interface SortImportsConfig {
     importOrder: string[];
 }
 
-export function sortImports(code: string, config: SortImportsConfig): string {
+export function sortImports(
+    code: string,
+    {importOrder: importOrderConfig = [UNKNOWN, '^../', '^./']}: SortImportsConfig
+): string {
     const ast = parser.parse(code, {
         sourceType: 'module',
         plugins: ['jsx', 'typescript'],
@@ -36,20 +39,20 @@ export function sortImports(code: string, config: SortImportsConfig): string {
 
     // Initialize the import groups object
     const importGroups: {[key: string]: t.ImportDeclaration[]} = {};
-    if (config.importOrder) {
-        config.importOrder.forEach(order => {
+    if (importOrderConfig) {
+        importOrderConfig.forEach(order => {
             importGroups[order] = [];
         });
     }
-    if (!config.importOrder.includes(UNKNOWN)) {
+    if (!importOrderConfig.includes(UNKNOWN)) {
         importGroups[UNKNOWN] = [];
     }
 
     // Function to get the group key based on the importOrder patterns
     const getGroupKey = (importPath: string): string => {
-        if (!config.importOrder) return UNKNOWN;
-        for (let i = 0; i < config.importOrder.length; i++) {
-            const pattern = config.importOrder[i];
+        if (!importOrderConfig) return UNKNOWN;
+        for (let i = 0; i < importOrderConfig.length; i++) {
+            const pattern = importOrderConfig[i];
             const regex = new RegExp(pattern);
             if (regex.test(importPath)) {
                 return pattern;
@@ -66,8 +69,8 @@ export function sortImports(code: string, config: SortImportsConfig): string {
 
     // Join the import groups back together, maintaining the order specified in the config
     const sortedImports: (t.ImportDeclaration | t.ExpressionStatement)[] = [];
-    if (config.importOrder) {
-        config.importOrder.forEach(order => {
+    if (importOrderConfig) {
+        importOrderConfig.forEach(order => {
             if (importGroups[order].length > 0) {
                 importGroups[order].forEach(declaration => {
                     declaration.specifiers.sort((a, b) => {
@@ -81,7 +84,7 @@ export function sortImports(code: string, config: SortImportsConfig): string {
             }
         });
     }
-    if (!config.importOrder.includes(UNKNOWN) && importGroups[UNKNOWN].length > 0) {
+    if (!importOrderConfig.includes(UNKNOWN) && importGroups[UNKNOWN].length > 0) {
         importGroups[UNKNOWN].forEach(declaration => {
             declaration.specifiers.sort((a, b) => {
                 if (a.local.name < b.local.name) return -1;
@@ -102,13 +105,26 @@ export function sortImports(code: string, config: SortImportsConfig): string {
         ...ast,
         program: {
             ...ast.program,
-            body: [...sortedImports, ...ast.program.body.filter(node => node.type !== 'ImportDeclaration')],
+            body: [...sortedImports],
         },
     };
 
-    const {code: transformedCode} = generate(newAst, {retainLines: true});
+    const restAst = {
+        ...ast,
+        program: {
+            ...ast.program,
+            body: [...ast.program.body.filter(node => node.type !== 'ImportDeclaration')],
+        },
+    };
 
-    return transformedCode.replace(new RegExp(`"${NEW_LINE_PLACE_HOLDER_NODE}";`, 'gi'), NEW_LINE_CHARACTERS).trim();
+    const {code: transformedImports} = generate(newAst, {retainLines: false});
+    const {code: transformedRest} = generate(restAst, {retainLines: true});
+
+    const importsCode = transformedImports
+        .replace(new RegExp(`"${NEW_LINE_PLACE_HOLDER_NODE}";`, 'gi'), NEW_LINE_CHARACTERS)
+        .trim();
+
+    return `${importsCode}${NEW_LINE_CHARACTERS}${transformedRest}`;
 }
 
 const preprocess = (code: string, options: any): string => {
