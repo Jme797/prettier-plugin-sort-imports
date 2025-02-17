@@ -2,6 +2,7 @@ import * as _generate from '@babel/generator';
 import * as parser from '@babel/parser';
 import * as _traverse from '@babel/traverse';
 import * as t from '@babel/types';
+import {AST} from 'prettier';
 import {parsers as babelParsers} from 'prettier/plugins/babel';
 import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
 
@@ -16,22 +17,28 @@ interface SortImportsConfig {
     importOrder: string[];
 }
 
-export function sortImports(
-    code: string,
-    {importOrder: importOrderConfig = [UNKNOWN, '^../', '^./']}: SortImportsConfig
-): string {
-    const ast = parser.parse(code, {
+const parseWithBabel = (code: string): AST => {
+    return parser.parse(code, {
         sourceType: 'module',
         plugins: ['jsx', 'typescript'],
         attachComment: true,
     });
+};
+
+export function sortImports(
+    code: string,
+    {importOrder: importOrderConfig = [UNKNOWN, '^../', '^./']}: SortImportsConfig
+): string {
+    const ast = parseWithBabel(code);
 
     const importDeclarations: t.ImportDeclaration[] = [];
     const leadingCommentsMap: Map<t.Node, t.Comment[]> = new Map();
 
     traverse(ast, {
         ImportDeclaration(path: any) {
-            importDeclarations.push(path.node);
+            if (path.parent.type === 'Program') {
+                importDeclarations.push(path.node);
+            }
         },
         Program(path: any) {
             if (path.node.body.length > 0 && path.node.body[0].leadingComments) {
@@ -88,7 +95,9 @@ export function sortImports(
     Object.keys(importGroups).forEach(groupKey => {
         importGroups[groupKey].forEach(declaration => {
             const defaultSpecifier = declaration.specifiers.find(specifier => t.isImportDefaultSpecifier(specifier));
-            const namespaceSpecifier = declaration.specifiers.find(specifier => t.isImportNamespaceSpecifier(specifier));
+            const namespaceSpecifier = declaration.specifiers.find(specifier =>
+                t.isImportNamespaceSpecifier(specifier)
+            );
             const namedSpecifiers = declaration.specifiers.filter(specifier => t.isImportSpecifier(specifier));
 
             namedSpecifiers.sort((a, b) => {
@@ -127,16 +136,14 @@ export function sortImports(
 }
 
 const preprocess = (code: string, options: any): string => {
-    const ast = parser.parse(code, {
-        sourceType: 'module',
-        plugins: ['jsx', 'typescript'],
-        attachComment: true,
-    });
+    const ast = parseWithBabel(code);
 
     let lastImportEnd = 0;
     traverse(ast, {
         ImportDeclaration(path: any) {
-            lastImportEnd = path.node.loc.end.line;
+            if (path.parent.type === 'Program') {
+                lastImportEnd = path.node.loc.end.line;
+            }
         },
     });
 
