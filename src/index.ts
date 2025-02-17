@@ -2,8 +2,8 @@ import * as _generate from '@babel/generator';
 import * as parser from '@babel/parser';
 import * as _traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import {parsers as babelParsers} from 'prettier/plugins/babel';
-import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
+import { parsers as babelParsers } from 'prettier/plugins/babel';
+import { parsers as typescriptParsers } from 'prettier/plugins/typescript';
 
 const traverse = _traverse.default;
 const generate = _generate.default;
@@ -18,7 +18,7 @@ interface SortImportsConfig {
 
 export function sortImports(
     code: string,
-    {importOrder: importOrderConfig = [UNKNOWN, '^../', '^./']}: SortImportsConfig
+    { importOrder: importOrderConfig = [UNKNOWN, '^../', '^./'] }: SortImportsConfig
 ): string {
     const ast = parser.parse(code, {
         sourceType: 'module',
@@ -46,7 +46,7 @@ export function sortImports(
     });
 
     // Initialize the import groups object
-    const importGroups: {[key: string]: t.ImportDeclaration[]} = {};
+    const importGroups: { [key: string]: t.ImportDeclaration[] } = {};
     if (importOrderConfig) {
         importOrderConfig.forEach(order => {
             importGroups[order] = [];
@@ -95,7 +95,7 @@ export function sortImports(
                     body: [...importGroups[groupKey]],
                 },
             };
-            const {code: groupCode} = generate(groupAst, {retainLines: false, comments: true});
+            const { code: groupCode } = generate(groupAst, { retainLines: false, comments: true });
             groupCodes.push(groupCode.trim());
         }
     });
@@ -109,8 +109,10 @@ const preprocess = (code: string, options: any): string => {
     // Find the line where the import statements end in the original code
     const originalLines = code.split('\n');
     let importEndLine = 0;
+    let lastImportLine = -1;
     let insideImport = false;
     let hasImports = false;
+
     for (let i = 0; i < originalLines.length; i++) {
         const line = originalLines[i].trim();
         if (line.startsWith('import')) {
@@ -119,11 +121,12 @@ const preprocess = (code: string, options: any): string => {
         if (line.startsWith('import') || line.startsWith('//') || line.startsWith('/*') || insideImport) {
             if (line.endsWith(';') || line.endsWith('*/')) {
                 insideImport = false;
+                lastImportLine = i;
             } else if (line.startsWith('import') || line.startsWith('/*')) {
                 insideImport = true;
             }
         } else if (line !== '') {
-            importEndLine = i;
+            importEndLine = lastImportLine + 1;
             break;
         }
     }
@@ -136,7 +139,7 @@ const preprocess = (code: string, options: any): string => {
     const transformedImports = sortImports(code, options);
 
     // Extract the rest of the original code
-    const nonImportCode = originalLines.slice(importEndLine).join('\n');
+    const nonImportCode = originalLines.slice(lastImportLine + 1).join('\n');
 
     // Combine processed imports with the rest of the original code
     const finalCode = `${transformedImports}${NEW_LINE_CHARACTERS}${nonImportCode}`;
