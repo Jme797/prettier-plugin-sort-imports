@@ -2,13 +2,13 @@ import * as _generate from '@babel/generator';
 import * as parser from '@babel/parser';
 import * as _traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import {parsers as babelParsers} from 'prettier/plugins/babel';
-import {parsers as typescriptParsers} from 'prettier/plugins/typescript';
+import { parsers as babelParsers } from 'prettier/plugins/babel';
+import { parsers as typescriptParsers } from 'prettier/plugins/typescript';
 
 const traverse = _traverse.default;
 const generate = _generate.default;
 
-const {expressionStatement, stringLiteral} = t;
+const { expressionStatement, stringLiteral } = t;
 
 const NEW_LINE_CHARACTERS = '\n\n';
 const NEW_LINE_PLACE_HOLDER_NODE = 'NEW_LINE_PLACE_HOLDER_NODE';
@@ -22,7 +22,7 @@ interface SortImportsConfig {
 
 export function sortImports(
     code: string,
-    {importOrder: importOrderConfig = [UNKNOWN, '^../', '^./']}: SortImportsConfig
+    { importOrder: importOrderConfig = [UNKNOWN, '^../', '^./'] }: SortImportsConfig
 ): string {
     const ast = parser.parse(code, {
         sourceType: 'module',
@@ -38,7 +38,7 @@ export function sortImports(
     });
 
     // Initialize the import groups object
-    const importGroups: {[key: string]: t.ImportDeclaration[]} = {};
+    const importGroups: { [key: string]: t.ImportDeclaration[] } = {};
     if (importOrderConfig) {
         importOrderConfig.forEach(order => {
             importGroups[order] = [];
@@ -117,21 +117,44 @@ export function sortImports(
         },
     };
 
-    const {code: transformedImports} = generate(newAst, {retainLines: false});
-    const {code: transformedRest} = generate(restAst, {retainLines: true});
+    const { code: transformedImports } = generate(newAst, { retainLines: false });
 
     const importsCode = transformedImports
         .replace(new RegExp(`"${NEW_LINE_PLACE_HOLDER_NODE}";`, 'gi'), NEW_LINE_CHARACTERS)
         .trim();
 
-    return `${importsCode}${NEW_LINE_CHARACTERS}${transformedRest}`;
+    return importsCode;
 }
 
 const preprocess = (code: string, options: any): string => {
-    const config: SortImportsConfig = {
-        importOrder: options.importOrder,
-    };
-    return sortImports(code, config);
+    // Find the line where the import statements end in the original code
+    const originalLines = code.split('\n');
+    let importEndLine = 0;
+    let insideImport = false;
+    for (let i = 0; i < originalLines.length; i++) {
+        const line = originalLines[i].trim();
+        if (line.startsWith('import') || line.startsWith('//') || line.startsWith('/*') || insideImport) {
+            if (line.endsWith(';') || line.endsWith('*/')) {
+                insideImport = false;
+            } else if (line.startsWith('import') || line.startsWith('/*')) {
+                insideImport = true;
+            }
+        } else if (line !== '') {
+            importEndLine = i;
+            break;
+        }
+    }
+
+    // Transform the code to sort imports
+    const transformedImports = sortImports(code, options);
+
+    // Extract the rest of the original code
+    const nonImportCode = originalLines.slice(importEndLine).join('\n');
+
+    // Combine processed imports with the rest of the original code
+    const finalCode = `${transformedImports}${NEW_LINE_CHARACTERS}${nonImportCode}`;
+
+    return finalCode;
 };
 
 export const options = {
