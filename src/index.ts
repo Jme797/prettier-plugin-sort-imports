@@ -87,11 +87,16 @@ export function sortImports(
     // Sort specifiers within each import declaration
     Object.keys(importGroups).forEach(groupKey => {
         importGroups[groupKey].forEach(declaration => {
-            declaration.specifiers.sort((a, b) => {
+            const defaultSpecifier = declaration.specifiers.find(specifier => t.isImportDefaultSpecifier(specifier));
+            const namedSpecifiers = declaration.specifiers.filter(specifier => t.isImportSpecifier(specifier));
+
+            namedSpecifiers.sort((a, b) => {
                 if (a.local.name < b.local.name) return -1;
                 if (a.local.name > b.local.name) return 1;
                 return 0;
             });
+
+            declaration.specifiers = defaultSpecifier ? [defaultSpecifier, ...namedSpecifiers] : namedSpecifiers;
         });
     });
 
