@@ -37,7 +37,6 @@ describe('Prettier Sort Imports Plugin', () => {
             '',
         ].join('\n');
         const result = await format(code, ['<UNKNOWN>', '^../', '^./']);
-        console.log(result.split('\n'));
         expect(result).toBe(expected);
     });
 
@@ -142,4 +141,31 @@ describe('Prettier Sort Imports Plugin', () => {
         const resultDifferentOrder = await format(code, ['^../', '^./', '<UNKNOWN>']);
         expect(resultDifferentOrder).toBe(expectedDifferentOrder);
     });
+
+    it('Injects the code back in to the code at the same location it was removed', async () => {
+        const code = [
+            '// Some comment',
+            'const abc = () => "abc";',
+            '',
+            '',
+            'import c from "c";',
+            'import a from "a";',
+            '',
+            'const def = () => "def";',
+            ''
+        ].join('\n')
+        const expectedFormatted = [
+            '// Some comment',
+            "const abc = () => 'abc';",
+            '',
+            "import a from 'a';",
+            "import c from 'c';",
+            '',
+            "const def = () => 'def';",
+            ''
+        ].join('\n')
+
+        const result = await format(code, ['<UNKNOWN>']);
+        expect(result).toBe(expectedFormatted);
+    })
 });

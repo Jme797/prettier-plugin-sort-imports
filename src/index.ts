@@ -138,32 +138,35 @@ export function sortImports(
 const preprocess = (code: string, options: any): string => {
     const ast = parseWithBabel(code);
 
-    let lastImportEnd = 0;
+    let importStart = Infinity;
+    let importEnd = 0;
     traverse(ast, {
         ImportDeclaration(path: any) {
             if (path.parent.type === 'Program') {
-                lastImportEnd = path.node.loc.end.line;
+                importStart = Math.min(importStart, path.node.loc.start.line - 1);
+                importEnd = Math.max(importEnd, path.node.loc.end.line);
             }
         },
     });
 
     const originalLines = code.split('\n');
-    const importEndLine = lastImportEnd;
+    const importLines = originalLines.slice(importStart, importEnd).join('\n');
 
-    if (importEndLine === 0) {
+    if (importEnd === 0) {
         return code;
     }
 
     // Transform the code to sort imports
-    const transformedImports = sortImports(code, options);
+    const transformedImports = sortImports(importLines, options);
 
     // Extract the rest of the original code
-    const nonImportCode = originalLines.slice(importEndLine).join('\n');
+    const beforeImports = originalLines.slice(0, importStart).join('\n');
+    const afterImports = originalLines.slice(importEnd).join('\n');
 
     // Combine processed imports with the rest of the original code
-    const finalCode = `${transformedImports}${NEW_LINE_CHARACTERS}${nonImportCode}`;
+    const finalCode = `${beforeImports}\n${transformedImports}\n${afterImports}`;
 
-    return finalCode;
+    return finalCode.trim();
 };
 
 export const options: SupportOptions = {
